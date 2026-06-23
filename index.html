@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Layla's Sweet 16 Championship</title>
+  <meta name="description" content="A locked Sweet 16 birthday surprise for Layla with soccer games, confetti, and birthday messages." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Poppins:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="confettiCanvas" aria-hidden="true"></canvas>
+
+  <div class="floating-field" aria-hidden="true">
+    <span>⚽</span><span>🎂</span><span>⭐</span><span>⚽</span><span>🎉</span><span>🏆</span>
+  </div>
+
+  <main>
+    <section id="lockedScreen" class="screen locked-screen">
+      <div class="stadium-glow"></div>
+      <div class="scoreboard locked-card">
+        <p class="eyebrow">Sweet 16 Championship</p>
+        <h1>Layla's Birthday Cup</h1>
+        <p class="subtitle">The celebration is locked until kickoff.</p>
+
+        <div class="player-card">
+          <div>
+            <span class="label">Player</span>
+            <strong>Layla</strong>
+          </div>
+          <div>
+            <span class="label">Current Level</span>
+            <strong>15</strong>
+          </div>
+          <div>
+            <span class="label">Next Level</span>
+            <strong>16</strong>
+          </div>
+        </div>
+
+        <div class="countdown" aria-label="Countdown until unlock">
+          <div><strong id="days">00</strong><span>Days</span></div>
+          <div><strong id="hours">00</strong><span>Hours</span></div>
+          <div><strong id="minutes">00</strong><span>Minutes</span></div>
+          <div><strong id="seconds">00</strong><span>Seconds</span></div>
+        </div>
+
+        <p class="unlock-note">Unlocks June 23, 2026 at 12:00 AM</p>
+        <button id="previewBtn" class="ghost-button" type="button">Try to open the stadium</button>
+        <p id="lockedMessage" class="tiny-message" role="status"></p>
+      </div>
+    </section>
+
+    <section id="birthdaySite" class="screen birthday-site hidden">
+      <nav class="site-nav" aria-label="Birthday site navigation">
+        <a href="#welcome">Kickoff</a>
+        <a href="#reasons">16 Reasons</a>
+        <a href="#locker">Lockers</a>
+        <a href="#game">Penalty Kick</a>
+        <a href="#guestbook">Guestbook</a>
+      </nav>
+
+      <header id="welcome" class="hero">
+        <div class="hero-content">
+          <p class="eyebrow">The stadium is open</p>
+          <h2>GOOOOAL! Layla is 16!</h2>
+          <p class="hero-text">Happy Sweet 16, Layla. Today, you are the MVP, the birthday champion, and the reason this whole stadium is celebrating.</p>
+          <div class="hero-actions">
+            <button id="celebrateBtn" type="button">Launch Confetti</button>
+            <button id="chantBtn" class="secondary" type="button">Play Birthday Chant</button>
+          </div>
+        </div>
+        <div class="trophy-card" aria-label="MVP card">
+          <span class="big-icon">🏆</span>
+          <h3>Today's MVP</h3>
+          <p>Layla</p>
+          <small>Sweet 16 Champion</small>
+        </div>
+      </header>
+
+      <section class="section intro-grid">
+        <article class="glass-card">
+          <h3>Birthday Message</h3>
+          <p>Layla, I hope your 16th birthday feels as special as you are. You deserve a day full of smiles, laughter, soccer-ball surprises, and people reminding you how much you matter.</p>
+        </article>
+        <article class="glass-card">
+          <h3>Match Details</h3>
+          <ul class="clean-list">
+            <li><span>Match:</span> Layla vs. Level 16</li>
+            <li><span>Status:</span> Birthday Champion</li>
+            <li><span>Theme:</span> Soccer, sparkles, and Sweet 16 energy</li>
+            <li><span>Final Score:</span> Layla wins by a landslide</li>
+          </ul>
+        </article>
+      </section>
+
+      <section id="reasons" class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Collectible cards</p>
+          <h2>16 Reasons Layla is Amazing</h2>
+          <p>Click each card to flip it.</p>
+        </div>
+        <div id="reasonGrid" class="card-grid"></div>
+      </section>
+
+      <section id="locker" class="section locker-section">
+        <div class="section-heading">
+          <p class="eyebrow">Locker room surprises</p>
+          <h2>Open the 16 Birthday Lockers</h2>
+          <p>Every locker has a little birthday surprise inside.</p>
+        </div>
+        <div id="lockerGrid" class="locker-grid"></div>
+      </section>
+
+      <section id="easter" class="section easter-section">
+        <div class="section-heading">
+          <p class="eyebrow">Hidden challenge</p>
+          <h2>Find the 16 Soccer Balls</h2>
+          <p>Click the tiny soccer balls hidden around the page. Some are sneaky.</p>
+          <div class="progress-wrap">
+            <div id="soccerProgress" class="progress-bar"></div>
+          </div>
+          <p id="soccerCount">0 / 16 found</p>
+        </div>
+        <div id="hiddenBalls" class="hidden-balls" aria-label="Hidden soccer ball challenge"></div>
+      </section>
+
+      <section id="game" class="section game-section">
+        <div class="game-card">
+          <div>
+            <p class="eyebrow">Mini game</p>
+            <h2>Penalty Kick Challenge</h2>
+            <p>Press shoot and see what birthday message you score.</p>
+            <button id="shootBtn" type="button">Shoot ⚽</button>
+          </div>
+          <div class="goal-box">
+            <div id="ball" class="ball">⚽</div>
+            <div class="net"></div>
+          </div>
+        </div>
+        <p id="shotResult" class="shot-result">Ready at the line...</p>
+      </section>
+
+      <section class="section bracket-section">
+        <div class="section-heading">
+          <p class="eyebrow">Tournament bracket</p>
+          <h2>Layla's Best Traits Cup</h2>
+        </div>
+        <div class="bracket">
+          <div>Kindness <span>beats</span> Bad Days</div>
+          <div>Humor <span>beats</span> Boredom</div>
+          <div>Soccer Skills <span>beats</span> The Other Team</div>
+          <div>Friendship <span>beats</span> Loneliness</div>
+          <div class="winner">🏆 Champion: Layla</div>
+        </div>
+      </section>
+
+      <section id="guestbook" class="section guestbook-section">
+        <div class="section-heading">
+          <p class="eyebrow">Digital guestbook</p>
+          <h2>Leave Layla a Birthday Note</h2>
+          <p>This saves on the device/browser using local storage. No backend needed.</p>
+        </div>
+        <form id="guestbookForm" class="guestbook-form">
+          <input id="guestName" type="text" placeholder="Your name" maxlength="40" required />
+          <textarea id="guestMessage" placeholder="Write a birthday message..." maxlength="220" required></textarea>
+          <button type="submit">Add Message</button>
+        </form>
+        <div id="guestbookMessages" class="messages"></div>
+      </section>
+
+      <footer class="footer">
+        <p>Made for Layla's Sweet 16 ⚽ 🎂</p>
+        <button id="topBtn" type="button">Back to Top</button>
+      </footer>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>

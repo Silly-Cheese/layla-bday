@@ -1,3 +1,32 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  increment
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBp7gQ2qWe0XgzUlavc_eQHHpj9S2enJ7s",
+  authDomain: "layla-bday.firebaseapp.com",
+  projectId: "layla-bday",
+  storageBucket: "layla-bday.firebasestorage.app",
+  messagingSenderId: "280877512621",
+  appId: "1:280877512621:web:b35b10d14386cd4c729324"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const TARGET_UNLOCK = new Date("2026-06-23T00:00:00-05:00").getTime();
 
 const lockedScreen = document.getElementById("lockedScreen");
@@ -60,9 +89,11 @@ const shotMessages = [
   "MVP finish! Level 16 has officially begun!"
 ];
 
-function pad(value) {
-  return String(value).padStart(2, "0");
-}
+const teamOptions = ["USA", "Barcelona", "Real Madrid", "Arsenal", "Other"];
+const traitOptions = ["Kindness", "Humor", "Soccer Skills", "Friendship", "Determination"];
+const reactionKeys = ["soccer", "cake", "heart", "party", "trophy"];
+
+function pad(value) { return String(value).padStart(2, "0"); }
 
 function showToast(message) {
   toast.textContent = message;
@@ -72,23 +103,15 @@ function showToast(message) {
 }
 
 function updateCountdown() {
-  const now = Date.now();
-  const distance = TARGET_UNLOCK - now;
-
+  const distance = TARGET_UNLOCK - Date.now();
   if (distance <= 0) {
     unlockSite();
     return;
   }
-
-  const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((distance / (1000 * 60)) % 60);
-  const seconds = Math.floor((distance / 1000) % 60);
-
-  countdownEls.days.textContent = pad(days);
-  countdownEls.hours.textContent = pad(hours);
-  countdownEls.minutes.textContent = pad(minutes);
-  countdownEls.seconds.textContent = pad(seconds);
+  countdownEls.days.textContent = pad(Math.floor(distance / (1000 * 60 * 60 * 24)));
+  countdownEls.hours.textContent = pad(Math.floor((distance / (1000 * 60 * 60)) % 24));
+  countdownEls.minutes.textContent = pad(Math.floor((distance / (1000 * 60)) % 60));
+  countdownEls.seconds.textContent = pad(Math.floor((distance / 1000) % 60));
 }
 
 function unlockSite() {
@@ -99,15 +122,10 @@ function unlockSite() {
 }
 
 previewBtn.addEventListener("click", () => {
-  const distance = TARGET_UNLOCK - Date.now();
-  if (distance <= 0) {
-    unlockSite();
-    return;
-  }
+  if (TARGET_UNLOCK - Date.now() <= 0) return unlockSite();
   lockedMessage.textContent = "The stadium doors are still locked. Come back at midnight!";
   showToast("Locked until June 23, 2026 at 12:00 AM.");
 });
-
 setInterval(updateCountdown, 1000);
 updateCountdown();
 
@@ -117,12 +135,7 @@ function buildReasons() {
     const card = document.createElement("button");
     card.type = "button";
     card.className = "flip-card";
-    card.innerHTML = `
-      <span class="flip-inner">
-        <span class="flip-face"><strong>#${index + 1}</strong><br>Tap to reveal ⚽</span>
-        <span class="flip-face flip-back">${reason}</span>
-      </span>
-    `;
+    card.innerHTML = `<span class="flip-inner"><span class="flip-face"><strong>#${index + 1}</strong><br>Tap to reveal ⚽</span><span class="flip-face flip-back">${reason}</span></span>`;
     card.addEventListener("click", () => card.classList.toggle("flipped"));
     grid.appendChild(card);
   });
@@ -137,7 +150,7 @@ function buildLockers() {
     locker.innerHTML = `<span><span class="door">🎁</span>Locker ${index + 1}</span>`;
     locker.addEventListener("click", () => {
       locker.classList.add("opened");
-      locker.innerHTML = `<span>${surprise}</span>`;
+      locker.innerHTML = `<span>${escapeHTML(surprise)}</span>`;
       if (index === 15) launchConfetti(80);
     });
     grid.appendChild(locker);
@@ -148,12 +161,8 @@ function buildHiddenBalls() {
   const field = document.getElementById("hiddenBalls");
   const countText = document.getElementById("soccerCount");
   const progress = document.getElementById("soccerProgress");
-  const positions = [
-    [4, 9], [16, 72], [25, 25], [36, 82], [48, 13], [58, 55], [70, 21], [83, 78],
-    [90, 35], [12, 43], [31, 59], [44, 39], [66, 87], [76, 48], [88, 10], [5, 88]
-  ];
+  const positions = [[4,9],[16,72],[25,25],[36,82],[48,13],[58,55],[70,21],[83,78],[90,35],[12,43],[31,59],[44,39],[66,87],[76,48],[88,10],[5,88]];
   let found = 0;
-
   positions.forEach(([left, top], index) => {
     const ball = document.createElement("button");
     ball.type = "button";
@@ -182,7 +191,6 @@ function setupPenaltyKick() {
   const shootBtn = document.getElementById("shootBtn");
   const ball = document.getElementById("ball");
   const result = document.getElementById("shotResult");
-
   shootBtn.addEventListener("click", () => {
     ball.classList.remove("shoot");
     void ball.offsetWidth;
@@ -195,83 +203,186 @@ function setupPenaltyKick() {
   });
 }
 
-function setupGuestbook() {
-  const form = document.getElementById("guestbookForm");
-  const nameInput = document.getElementById("guestName");
-  const messageInput = document.getElementById("guestMessage");
-  const container = document.getElementById("guestbookMessages");
-  const key = "laylaSweet16Guestbook";
-
-  function getMessages() {
-    try {
-      return JSON.parse(localStorage.getItem(key)) || [];
-    } catch {
-      return [];
-    }
-  }
-
-  function saveMessages(messages) {
-    localStorage.setItem(key, JSON.stringify(messages));
-  }
-
-  function render() {
-    const messages = getMessages();
-    container.innerHTML = "";
-    if (!messages.length) {
-      container.innerHTML = `<div class="message-card"><strong>No messages yet</strong><p>Be the first to leave Layla a Sweet 16 note.</p></div>`;
-      return;
-    }
-    messages.slice().reverse().forEach((entry) => {
-      const card = document.createElement("div");
-      card.className = "message-card";
-      const safeName = escapeHTML(entry.name);
-      const safeMsg = escapeHTML(entry.message);
-      card.innerHTML = `<strong>${safeName}</strong><p>${safeMsg}</p>`;
-      container.appendChild(card);
-    });
-  }
-
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const name = nameInput.value.trim();
-    const message = messageInput.value.trim();
-    if (!name || !message) return;
-    const messages = getMessages();
-    messages.push({ name, message, createdAt: new Date().toISOString() });
-    saveMessages(messages);
-    form.reset();
-    render();
-    showToast("Birthday note added!");
-  });
-
-  render();
+function clean(value, max = 220) {
+  return String(value || "").trim().replace(/\s+/g, " ").slice(0, max);
 }
 
 function escapeHTML(value) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return String(value || "")
+    .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+
+async function addEntry(collectionName, data, successMessage) {
+  await addDoc(collection(db, collectionName), {
+    ...data,
+    createdAt: serverTimestamp()
+  });
+  showToast(successMessage);
+  launchConfetti(30);
+}
+
+function listenCards(collectionName, containerId, emptyText, countId, formatter) {
+  const container = document.getElementById(containerId);
+  const count = document.getElementById(countId);
+  const q = query(collection(db, collectionName), orderBy("createdAt", "desc"), limit(60));
+  onSnapshot(q, (snapshot) => {
+    if (count) count.textContent = snapshot.size;
+    container.innerHTML = "";
+    if (snapshot.empty) {
+      container.innerHTML = `<div class="message-card"><strong>No entries yet</strong><p>${escapeHTML(emptyText)}</p></div>`;
+      return;
+    }
+    snapshot.forEach((docSnap) => {
+      const card = document.createElement("div");
+      card.className = "message-card";
+      card.innerHTML = formatter(docSnap.data());
+      container.appendChild(card);
+    });
+  }, (error) => showToast(`Could not load ${collectionName}: ${error.message}`));
+}
+
+function listenWordCloud() {
+  const container = document.getElementById("wordCloud");
+  const count = document.getElementById("wordCount");
+  const q = query(collection(db, "oneWords"), orderBy("createdAt", "desc"), limit(100));
+  onSnapshot(q, (snapshot) => {
+    count.textContent = snapshot.size;
+    const totals = {};
+    snapshot.forEach((docSnap) => {
+      const word = clean(docSnap.data().word, 24);
+      if (!word) return;
+      const key = word.toLowerCase();
+      totals[key] = { word, count: (totals[key]?.count || 0) + 1 };
+    });
+    container.innerHTML = "";
+    const words = Object.values(totals).sort((a, b) => b.count - a.count);
+    if (!words.length) {
+      container.innerHTML = `<span class="word-pill">No words yet</span>`;
+      return;
+    }
+    words.forEach(({ word, count }) => {
+      const span = document.createElement("span");
+      span.className = "word-pill";
+      span.style.fontSize = `${1 + Math.min(count, 5) * 0.18}rem`;
+      span.textContent = count > 1 ? `${word} ×${count}` : word;
+      container.appendChild(span);
+    });
+  }, (error) => showToast(`Could not load word wall: ${error.message}`));
+}
+
+function setupFirestoreForms() {
+  bindForm("guestbookForm", () => ({
+    name: clean(document.getElementById("guestName").value, 40),
+    message: clean(document.getElementById("guestMessage").value, 220)
+  }), "messages", "Birthday message added!");
+
+  bindForm("awesomeForm", () => ({
+    name: clean(document.getElementById("awesomeName").value, 40),
+    text: clean(document.getElementById("awesomeText").value, 180)
+  }), "awesomeNotes", "Awesome note added!");
+
+  bindForm("wordForm", () => ({
+    name: clean(document.getElementById("wordName").value, 40),
+    word: clean(document.getElementById("oneWord").value, 24)
+  }), "oneWords", "Word added!");
+
+  bindForm("adviceForm", () => ({
+    name: clean(document.getElementById("adviceName").value, 40),
+    advice: clean(document.getElementById("adviceText").value, 220)
+  }), "advice", "Advice added!");
+
+  bindForm("timeCapsuleForm", () => ({
+    name: clean(document.getElementById("timeName").value, 40),
+    prediction: clean(document.getElementById("timeText").value, 220)
+  }), "timeCapsule", "Time capsule prediction added!");
+}
+
+function bindForm(formId, readData, collectionName, successMessage) {
+  const form = document.getElementById(formId);
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const data = readData();
+    if (Object.values(data).some(value => !value)) return showToast("Please fill out every field first.");
+    try {
+      await addEntry(collectionName, data, successMessage);
+      form.reset();
+    } catch (error) {
+      showToast(`Could not save: ${error.message}`);
+    }
+  });
+}
+
+async function ensureDoc(path, seedData) {
+  const ref = doc(db, ...path);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) await setDoc(ref, seedData);
+  return ref;
+}
+
+async function setupReactions() {
+  const ref = await ensureDoc(["siteStats", "reactions"], Object.fromEntries(reactionKeys.map(key => [key, 0])));
+  onSnapshot(ref, (snap) => {
+    const data = snap.data() || {};
+    reactionKeys.forEach((key) => {
+      const el = document.getElementById(`reaction-${key}`);
+      if (el) el.textContent = data[key] || 0;
+    });
+  });
+  document.querySelectorAll(".reaction-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const key = btn.dataset.reaction;
+      await updateDoc(ref, { [key]: increment(1) });
+      showToast("Reaction sent!");
+    });
+  });
+}
+
+async function setupPoll(id, pollName, options) {
+  const container = document.getElementById(id);
+  const ref = await ensureDoc(["polls", pollName], Object.fromEntries(options.map(option => [option, 0])));
+
+  onSnapshot(ref, (snap) => {
+    const data = snap.data() || {};
+    const total = options.reduce((sum, option) => sum + (data[option] || 0), 0);
+    container.innerHTML = "";
+    options.forEach((option) => {
+      const votes = data[option] || 0;
+      const percent = total ? Math.round((votes / total) * 100) : 0;
+      const wrap = document.createElement("div");
+      wrap.className = "vote-row";
+      wrap.innerHTML = `
+        <button type="button" data-option="${escapeHTML(option)}">${escapeHTML(option)}</button>
+        <div class="vote-bar"><span style="width:${percent}%"></span></div>
+        <small>${votes} vote${votes === 1 ? "" : "s"} • ${percent}%</small>
+      `;
+      wrap.querySelector("button").addEventListener("click", async () => {
+        await updateDoc(ref, { [option]: increment(1) });
+        showToast("Vote counted!");
+      });
+      container.appendChild(wrap);
+    });
+  });
+}
+
+function setupLiveListeners() {
+  listenCards("messages", "guestbookMessages", "Be the first to leave Layla a Sweet 16 note.", "messageCount", data => `<strong>${escapeHTML(data.name)}</strong><p>${escapeHTML(data.message)}</p>`);
+  listenCards("awesomeNotes", "awesomeMessages", "Be the first to say what makes Layla awesome.", "awesomeCount", data => `<strong>${escapeHTML(data.name)}</strong><p>${escapeHTML(data.text)}</p>`);
+  listenCards("advice", "adviceMessages", "Be the first to give birthday advice.", "adviceCount", data => `<strong>${escapeHTML(data.name)}</strong><p>${escapeHTML(data.advice)}</p>`);
+  listenCards("timeCapsule", "timeCapsuleMessages", "Be the first to predict Layla's future.", null, data => `<strong>${escapeHTML(data.name)}</strong><p>${escapeHTML(data.prediction)}</p>`);
+  listenWordCloud();
 }
 
 function setupButtons() {
   document.getElementById("celebrateBtn").addEventListener("click", () => launchConfetti(160));
-  document.getElementById("chantBtn").addEventListener("click", () => {
-    showToast("🎶 Lay-la! Lay-la! Sweet 16 MVP! 🎶");
-  });
+  document.getElementById("chantBtn").addEventListener("click", () => showToast("🎶 Lay-la! Lay-la! Sweet 16 MVP! 🎶"));
   document.getElementById("topBtn").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 }
 
 const canvas = document.getElementById("confettiCanvas");
 const ctx = canvas.getContext("2d");
 let confetti = [];
-
-function sizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
+function sizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 window.addEventListener("resize", sizeCanvas);
 sizeCanvas();
 
@@ -307,11 +418,15 @@ function animateConfetti() {
   });
   requestAnimationFrame(animateConfetti);
 }
-animateConfetti();
 
+animateConfetti();
 buildReasons();
 buildLockers();
 buildHiddenBalls();
 setupPenaltyKick();
-setupGuestbook();
 setupButtons();
+setupFirestoreForms();
+setupLiveListeners();
+setupReactions().catch(error => showToast(`Reactions not ready: ${error.message}`));
+setupPoll("teamPoll", "favoriteTeam", teamOptions).catch(error => showToast(`Team poll not ready: ${error.message}`));
+setupPoll("traitPoll", "mvpTrait", traitOptions).catch(error => showToast(`Trait poll not ready: ${error.message}`));

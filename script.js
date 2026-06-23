@@ -1,20 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  onSnapshot,
-  query,
-  orderBy,
-  limit,
-  serverTimestamp,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  increment
-} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyBp7gQ2qWe0XgzUlavc_eQHHpj9S2enJ7s",
   authDomain: "layla-bday.firebaseapp.com",
@@ -24,10 +7,11 @@ const firebaseConfig = {
   appId: "1:280877512621:web:b35b10d14386cd4c729324"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
 const TARGET_UNLOCK = new Date("2026-06-23T00:00:00-05:00").getTime();
+
+let firebaseReady = false;
+let db = null;
+let firestore = null;
 
 const lockedScreen = document.getElementById("lockedScreen");
 const birthdaySite = document.getElementById("birthdaySite");
@@ -96,10 +80,11 @@ const reactionKeys = ["soccer", "cake", "heart", "party", "trophy"];
 function pad(value) { return String(value).padStart(2, "0"); }
 
 function showToast(message) {
+  if (!toast) return;
   toast.textContent = message;
   toast.classList.add("show");
   window.clearTimeout(showToast.timer);
-  showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2600);
+  showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 3200);
 }
 
 function updateCountdown() {
@@ -118,24 +103,23 @@ function unlockSite() {
   lockedScreen.classList.add("hidden");
   birthdaySite.classList.remove("hidden");
   launchConfetti(220);
-  window.setTimeout(() => showToast("⚽ Happy Sweet 16, Layla!"), 500);
 }
 
-previewBtn.addEventListener("click", () => {
+previewBtn?.addEventListener("click", () => {
   if (TARGET_UNLOCK - Date.now() <= 0) return unlockSite();
   lockedMessage.textContent = "The stadium doors are still locked. Come back at midnight!";
   showToast("Locked until June 23, 2026 at 12:00 AM.");
 });
-setInterval(updateCountdown, 1000);
-updateCountdown();
 
 function buildReasons() {
   const grid = document.getElementById("reasonGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
   reasons.forEach((reason, index) => {
     const card = document.createElement("button");
     card.type = "button";
     card.className = "flip-card";
-    card.innerHTML = `<span class="flip-inner"><span class="flip-face"><strong>#${index + 1}</strong><br>Tap to reveal ⚽</span><span class="flip-face flip-back">${reason}</span></span>`;
+    card.innerHTML = `<span class="flip-inner"><span class="flip-face"><strong>#${index + 1}</strong><br>Tap to reveal ⚽</span><span class="flip-face flip-back">${escapeHTML(reason)}</span></span>`;
     card.addEventListener("click", () => card.classList.toggle("flipped"));
     grid.appendChild(card);
   });
@@ -143,6 +127,8 @@ function buildReasons() {
 
 function buildLockers() {
   const grid = document.getElementById("lockerGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
   lockerSurprises.forEach((surprise, index) => {
     const locker = document.createElement("button");
     locker.type = "button";
@@ -161,6 +147,8 @@ function buildHiddenBalls() {
   const field = document.getElementById("hiddenBalls");
   const countText = document.getElementById("soccerCount");
   const progress = document.getElementById("soccerProgress");
+  if (!field || !countText || !progress) return;
+  field.innerHTML = "";
   const positions = [[4,9],[16,72],[25,25],[36,82],[48,13],[58,55],[70,21],[83,78],[90,35],[12,43],[31,59],[44,39],[66,87],[76,48],[88,10],[5,88]];
   let found = 0;
   positions.forEach(([left, top], index) => {
@@ -191,6 +179,7 @@ function setupPenaltyKick() {
   const shootBtn = document.getElementById("shootBtn");
   const ball = document.getElementById("ball");
   const result = document.getElementById("shotResult");
+  if (!shootBtn || !ball || !result) return;
   shootBtn.addEventListener("click", () => {
     ball.classList.remove("shoot");
     void ball.offsetWidth;
@@ -213,10 +202,37 @@ function escapeHTML(value) {
     .replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
 
+function firebaseUnavailableMessage() {
+  showToast("Firestore is not connected yet. Check Firebase rules and refresh.");
+}
+
+async function loadFirebase() {
+  const appSdkUrl = "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  const firestoreSdkUrl = "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  try {
+    const appMod = await import(appSdkUrl);
+    firestore = await import(firestoreSdkUrl);
+    const app = appMod.initializeApp(firebaseConfig);
+    db = firestore.getFirestore(app);
+    firebaseReady = true;
+    setupFirestoreForms();
+    setupLiveListeners();
+    setupReactions().catch(error => showToast(`Reactions not ready: ${error.message}`));
+    setupPoll("teamPoll", "favoriteTeam", teamOptions).catch(error => showToast(`Team poll not ready: ${error.message}`));
+    setupPoll("traitPoll", "mvpTrait", traitOptions).catch(error => showToast(`Trait poll not ready: ${error.message}`));
+    showToast("Firestore connected.");
+  } catch (error) {
+    console.error("Firebase failed to load", error);
+    setupOfflineFirestorePlaceholders();
+    showToast("The site works, but Firestore did not connect. Check console/rules.");
+  }
+}
+
 async function addEntry(collectionName, data, successMessage) {
-  await addDoc(collection(db, collectionName), {
+  if (!firebaseReady) throw new Error("Firestore is not connected");
+  await firestore.addDoc(firestore.collection(db, collectionName), {
     ...data,
-    createdAt: serverTimestamp()
+    createdAt: firestore.serverTimestamp()
   });
   showToast(successMessage);
   launchConfetti(30);
@@ -224,9 +240,10 @@ async function addEntry(collectionName, data, successMessage) {
 
 function listenCards(collectionName, containerId, emptyText, countId, formatter) {
   const container = document.getElementById(containerId);
-  const count = document.getElementById(countId);
-  const q = query(collection(db, collectionName), orderBy("createdAt", "desc"), limit(60));
-  onSnapshot(q, (snapshot) => {
+  const count = countId ? document.getElementById(countId) : null;
+  if (!container || !firebaseReady) return;
+  const q = firestore.query(firestore.collection(db, collectionName), firestore.orderBy("createdAt", "desc"), firestore.limit(60));
+  firestore.onSnapshot(q, (snapshot) => {
     if (count) count.textContent = snapshot.size;
     container.innerHTML = "";
     if (snapshot.empty) {
@@ -245,9 +262,10 @@ function listenCards(collectionName, containerId, emptyText, countId, formatter)
 function listenWordCloud() {
   const container = document.getElementById("wordCloud");
   const count = document.getElementById("wordCount");
-  const q = query(collection(db, "oneWords"), orderBy("createdAt", "desc"), limit(100));
-  onSnapshot(q, (snapshot) => {
-    count.textContent = snapshot.size;
+  if (!container || !firebaseReady) return;
+  const q = firestore.query(firestore.collection(db, "oneWords"), firestore.orderBy("createdAt", "desc"), firestore.limit(100));
+  firestore.onSnapshot(q, (snapshot) => {
+    if (count) count.textContent = snapshot.size;
     const totals = {};
     snapshot.forEach((docSnap) => {
       const word = clean(docSnap.data().word, 24);
@@ -272,36 +290,20 @@ function listenWordCloud() {
 }
 
 function setupFirestoreForms() {
-  bindForm("guestbookForm", () => ({
-    name: clean(document.getElementById("guestName").value, 40),
-    message: clean(document.getElementById("guestMessage").value, 220)
-  }), "messages", "Birthday message added!");
-
-  bindForm("awesomeForm", () => ({
-    name: clean(document.getElementById("awesomeName").value, 40),
-    text: clean(document.getElementById("awesomeText").value, 180)
-  }), "awesomeNotes", "Awesome note added!");
-
-  bindForm("wordForm", () => ({
-    name: clean(document.getElementById("wordName").value, 40),
-    word: clean(document.getElementById("oneWord").value, 24)
-  }), "oneWords", "Word added!");
-
-  bindForm("adviceForm", () => ({
-    name: clean(document.getElementById("adviceName").value, 40),
-    advice: clean(document.getElementById("adviceText").value, 220)
-  }), "advice", "Advice added!");
-
-  bindForm("timeCapsuleForm", () => ({
-    name: clean(document.getElementById("timeName").value, 40),
-    prediction: clean(document.getElementById("timeText").value, 220)
-  }), "timeCapsule", "Time capsule prediction added!");
+  bindForm("guestbookForm", () => ({ name: clean(document.getElementById("guestName").value, 40), message: clean(document.getElementById("guestMessage").value, 220) }), "messages", "Birthday message added!");
+  bindForm("awesomeForm", () => ({ name: clean(document.getElementById("awesomeName").value, 40), text: clean(document.getElementById("awesomeText").value, 180) }), "awesomeNotes", "Awesome note added!");
+  bindForm("wordForm", () => ({ name: clean(document.getElementById("wordName").value, 40), word: clean(document.getElementById("oneWord").value, 24) }), "oneWords", "Word added!");
+  bindForm("adviceForm", () => ({ name: clean(document.getElementById("adviceName").value, 40), advice: clean(document.getElementById("adviceText").value, 220) }), "advice", "Advice added!");
+  bindForm("timeCapsuleForm", () => ({ name: clean(document.getElementById("timeName").value, 40), prediction: clean(document.getElementById("timeText").value, 220) }), "timeCapsule", "Time capsule prediction added!");
 }
 
 function bindForm(formId, readData, collectionName, successMessage) {
   const form = document.getElementById(formId);
+  if (!form || form.dataset.bound === "true") return;
+  form.dataset.bound = "true";
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (!firebaseReady) return firebaseUnavailableMessage();
     const data = readData();
     if (Object.values(data).some(value => !value)) return showToast("Please fill out every field first.");
     try {
@@ -314,15 +316,16 @@ function bindForm(formId, readData, collectionName, successMessage) {
 }
 
 async function ensureDoc(path, seedData) {
-  const ref = doc(db, ...path);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) await setDoc(ref, seedData);
+  const ref = firestore.doc(db, ...path);
+  const snap = await firestore.getDoc(ref);
+  if (!snap.exists()) await firestore.setDoc(ref, seedData);
   return ref;
 }
 
 async function setupReactions() {
+  if (!firebaseReady) return;
   const ref = await ensureDoc(["siteStats", "reactions"], Object.fromEntries(reactionKeys.map(key => [key, 0])));
-  onSnapshot(ref, (snap) => {
+  firestore.onSnapshot(ref, (snap) => {
     const data = snap.data() || {};
     reactionKeys.forEach((key) => {
       const el = document.getElementById(`reaction-${key}`);
@@ -330,19 +333,25 @@ async function setupReactions() {
     });
   });
   document.querySelectorAll(".reaction-btn").forEach((btn) => {
+    if (btn.dataset.bound === "true") return;
+    btn.dataset.bound = "true";
     btn.addEventListener("click", async () => {
       const key = btn.dataset.reaction;
-      await updateDoc(ref, { [key]: increment(1) });
-      showToast("Reaction sent!");
+      try {
+        await firestore.updateDoc(ref, { [key]: firestore.increment(1) });
+        showToast("Reaction sent!");
+      } catch (error) {
+        showToast(`Reaction failed: ${error.message}`);
+      }
     });
   });
 }
 
 async function setupPoll(id, pollName, options) {
   const container = document.getElementById(id);
+  if (!container || !firebaseReady) return;
   const ref = await ensureDoc(["polls", pollName], Object.fromEntries(options.map(option => [option, 0])));
-
-  onSnapshot(ref, (snap) => {
+  firestore.onSnapshot(ref, (snap) => {
     const data = snap.data() || {};
     const total = options.reduce((sum, option) => sum + (data[option] || 0), 0);
     container.innerHTML = "";
@@ -351,14 +360,14 @@ async function setupPoll(id, pollName, options) {
       const percent = total ? Math.round((votes / total) * 100) : 0;
       const wrap = document.createElement("div");
       wrap.className = "vote-row";
-      wrap.innerHTML = `
-        <button type="button" data-option="${escapeHTML(option)}">${escapeHTML(option)}</button>
-        <div class="vote-bar"><span style="width:${percent}%"></span></div>
-        <small>${votes} vote${votes === 1 ? "" : "s"} • ${percent}%</small>
-      `;
+      wrap.innerHTML = `<button type="button">${escapeHTML(option)}</button><div class="vote-bar"><span style="width:${percent}%"></span></div><small>${votes} vote${votes === 1 ? "" : "s"} • ${percent}%</small>`;
       wrap.querySelector("button").addEventListener("click", async () => {
-        await updateDoc(ref, { [option]: increment(1) });
-        showToast("Vote counted!");
+        try {
+          await firestore.updateDoc(ref, { [option]: firestore.increment(1) });
+          showToast("Vote counted!");
+        } catch (error) {
+          showToast(`Vote failed: ${error.message}`);
+        }
       });
       container.appendChild(wrap);
     });
@@ -373,10 +382,19 @@ function setupLiveListeners() {
   listenWordCloud();
 }
 
+function setupOfflineFirestorePlaceholders() {
+  ["guestbookMessages", "awesomeMessages", "adviceMessages", "timeCapsuleMessages"].forEach((id) => {
+    const container = document.getElementById(id);
+    if (container && !container.innerHTML.trim()) container.innerHTML = `<div class="message-card"><strong>Firestore not connected</strong><p>The main site still works. Check Firebase rules or the browser console.</p></div>`;
+  });
+  const wordCloud = document.getElementById("wordCloud");
+  if (wordCloud && !wordCloud.innerHTML.trim()) wordCloud.innerHTML = `<span class="word-pill">Firestore not connected</span>`;
+}
+
 function setupButtons() {
-  document.getElementById("celebrateBtn").addEventListener("click", () => launchConfetti(160));
-  document.getElementById("chantBtn").addEventListener("click", () => showToast("🎶 Lay-la! Lay-la! Sweet 16 MVP! 🎶"));
-  document.getElementById("topBtn").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  document.getElementById("celebrateBtn")?.addEventListener("click", () => launchConfetti(160));
+  document.getElementById("chantBtn")?.addEventListener("click", () => showToast("🎶 Lay-la! Lay-la! Sweet 16 MVP! 🎶"));
+  document.getElementById("topBtn")?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 }
 
 const canvas = document.getElementById("confettiCanvas");
@@ -389,16 +407,7 @@ sizeCanvas();
 function launchConfetti(amount = 120) {
   const colors = ["#ff4fa3", "#ffe370", "#37d67a", "#23c7ff", "#ffffff", "#7b3cff"];
   for (let i = 0; i < amount; i++) {
-    confetti.push({
-      x: Math.random() * canvas.width,
-      y: -20 - Math.random() * canvas.height * 0.25,
-      size: 6 + Math.random() * 9,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speed: 2 + Math.random() * 5,
-      drift: -2 + Math.random() * 4,
-      rotation: Math.random() * 360,
-      spin: -8 + Math.random() * 16
-    });
+    confetti.push({ x: Math.random() * canvas.width, y: -20 - Math.random() * canvas.height * 0.25, size: 6 + Math.random() * 9, color: colors[Math.floor(Math.random() * colors.length)], speed: 2 + Math.random() * 5, drift: -2 + Math.random() * 4, rotation: Math.random() * 360, spin: -8 + Math.random() * 16 });
   }
 }
 
@@ -425,8 +434,6 @@ buildLockers();
 buildHiddenBalls();
 setupPenaltyKick();
 setupButtons();
-setupFirestoreForms();
-setupLiveListeners();
-setupReactions().catch(error => showToast(`Reactions not ready: ${error.message}`));
-setupPoll("teamPoll", "favoriteTeam", teamOptions).catch(error => showToast(`Team poll not ready: ${error.message}`));
-setupPoll("traitPoll", "mvpTrait", traitOptions).catch(error => showToast(`Trait poll not ready: ${error.message}`));
+setInterval(updateCountdown, 1000);
+updateCountdown();
+loadFirebase();

@@ -27,7 +27,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const TARGET_UNLOCK = new Date("2026-06-22T00:00:00-05:00").getTime();
+const TARGET_UNLOCK = new Date("2026-06-23T00:00:00-05:00").getTime();
 
 const lockedScreen = document.getElementById("lockedScreen");
 const birthdaySite = document.getElementById("birthdaySite");

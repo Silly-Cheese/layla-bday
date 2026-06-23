@@ -26,18 +26,9 @@
         <p class="subtitle">The celebration is locked until kickoff.</p>
 
         <div class="player-card">
-          <div>
-            <span class="label">Player</span>
-            <strong>Layla</strong>
-          </div>
-          <div>
-            <span class="label">Current Level</span>
-            <strong>15</strong>
-          </div>
-          <div>
-            <span class="label">Next Level</span>
-            <strong>16</strong>
-          </div>
+          <div><span class="label">Player</span><strong>Layla</strong></div>
+          <div><span class="label">Current Level</span><strong>15</strong></div>
+          <div><span class="label">Next Level</span><strong>16</strong></div>
         </div>
 
         <div class="countdown" aria-label="Countdown until unlock">
@@ -57,9 +48,10 @@
       <nav class="site-nav" aria-label="Birthday site navigation">
         <a href="#welcome">Kickoff</a>
         <a href="#reasons">16 Reasons</a>
+        <a href="#live">Live Wall</a>
+        <a href="#polls">Polls</a>
         <a href="#locker">Lockers</a>
-        <a href="#game">Penalty Kick</a>
-        <a href="#guestbook">Guestbook</a>
+        <a href="#game">Game</a>
       </nav>
 
       <header id="welcome" class="hero">
@@ -79,6 +71,13 @@
           <small>Sweet 16 Champion</small>
         </div>
       </header>
+
+      <section class="section stats-grid" aria-label="Live birthday counters">
+        <article class="stat-card"><span id="messageCount">0</span><p>Birthday Messages</p></article>
+        <article class="stat-card"><span id="adviceCount">0</span><p>Advice Cards</p></article>
+        <article class="stat-card"><span id="wordCount">0</span><p>One-Word Entries</p></article>
+        <article class="stat-card"><span id="awesomeCount">0</span><p>Awesome Notes</p></article>
+      </section>
 
       <section class="section intro-grid">
         <article class="glass-card">
@@ -105,6 +104,88 @@
         <div id="reasonGrid" class="card-grid"></div>
       </section>
 
+      <section id="live" class="section firestore-section">
+        <div class="section-heading">
+          <p class="eyebrow">Live Firestore wall</p>
+          <h2>Birthday Wall</h2>
+          <p>Friends can add notes from their own phones. New submissions appear for everyone.</p>
+        </div>
+
+        <div class="form-grid">
+          <form id="guestbookForm" class="guestbook-form data-form">
+            <h3>Leave Layla a Birthday Note</h3>
+            <input id="guestName" type="text" placeholder="Your name" maxlength="40" required />
+            <textarea id="guestMessage" placeholder="Write a birthday message..." maxlength="220" required></textarea>
+            <button type="submit">Add Message</button>
+          </form>
+
+          <form id="awesomeForm" class="guestbook-form data-form">
+            <h3>One Thing That Makes Layla Awesome</h3>
+            <input id="awesomeName" type="text" placeholder="Your name" maxlength="40" required />
+            <textarea id="awesomeText" placeholder="One thing that makes Layla awesome..." maxlength="180" required></textarea>
+            <button type="submit">Add Awesome Note</button>
+          </form>
+
+          <form id="wordForm" class="guestbook-form data-form">
+            <h3>Describe Layla in One Word</h3>
+            <input id="wordName" type="text" placeholder="Your name" maxlength="40" required />
+            <input id="oneWord" type="text" placeholder="Kind, funny, strong..." maxlength="24" required />
+            <button type="submit">Add Word</button>
+          </form>
+
+          <form id="adviceForm" class="guestbook-form data-form">
+            <h3>Birthday Advice for 16</h3>
+            <input id="adviceName" type="text" placeholder="Your name" maxlength="40" required />
+            <textarea id="adviceText" placeholder="Advice for Layla at 16..." maxlength="220" required></textarea>
+            <button type="submit">Add Advice</button>
+          </form>
+
+          <form id="timeCapsuleForm" class="guestbook-form data-form">
+            <h3>Birthday Time Capsule</h3>
+            <input id="timeName" type="text" placeholder="Your name" maxlength="40" required />
+            <textarea id="timeText" placeholder="Where do you see Layla in 5 years?" maxlength="220" required></textarea>
+            <button type="submit">Add Prediction</button>
+          </form>
+        </div>
+
+        <div class="wall-layout">
+          <article class="wall-card"><h3>Birthday Messages</h3><div id="guestbookMessages" class="messages"></div></article>
+          <article class="wall-card"><h3>Awesome Notes</h3><div id="awesomeMessages" class="messages"></div></article>
+          <article class="wall-card"><h3>One-Word Wall</h3><div id="wordCloud" class="word-cloud"></div></article>
+          <article class="wall-card"><h3>Birthday Advice</h3><div id="adviceMessages" class="messages"></div></article>
+          <article class="wall-card full"><h3>Time Capsule Predictions</h3><div id="timeCapsuleMessages" class="messages"></div></article>
+        </div>
+      </section>
+
+      <section id="polls" class="section polls-section">
+        <div class="section-heading">
+          <p class="eyebrow">Live votes</p>
+          <h2>Polls, Reactions, and Scoreboards</h2>
+        </div>
+        <div class="poll-grid">
+          <article class="wall-card">
+            <h3>Send a Reaction</h3>
+            <div class="reaction-row">
+              <button class="reaction-btn" data-reaction="soccer" type="button">⚽ <span id="reaction-soccer">0</span></button>
+              <button class="reaction-btn" data-reaction="cake" type="button">🎂 <span id="reaction-cake">0</span></button>
+              <button class="reaction-btn" data-reaction="heart" type="button">💖 <span id="reaction-heart">0</span></button>
+              <button class="reaction-btn" data-reaction="party" type="button">🎉 <span id="reaction-party">0</span></button>
+              <button class="reaction-btn" data-reaction="trophy" type="button">🏆 <span id="reaction-trophy">0</span></button>
+            </div>
+          </article>
+
+          <article class="wall-card">
+            <h3>Favorite Soccer Team Poll</h3>
+            <div id="teamPoll" class="vote-options"></div>
+          </article>
+
+          <article class="wall-card">
+            <h3>Layla's MVP Trait Poll</h3>
+            <div id="traitPoll" class="vote-options"></div>
+          </article>
+        </div>
+      </section>
+
       <section id="locker" class="section locker-section">
         <div class="section-heading">
           <p class="eyebrow">Locker room surprises</p>
@@ -119,9 +200,7 @@
           <p class="eyebrow">Hidden challenge</p>
           <h2>Find the 16 Soccer Balls</h2>
           <p>Click the tiny soccer balls hidden around the page. Some are sneaky.</p>
-          <div class="progress-wrap">
-            <div id="soccerProgress" class="progress-bar"></div>
-          </div>
+          <div class="progress-wrap"><div id="soccerProgress" class="progress-bar"></div></div>
           <p id="soccerCount">0 / 16 found</p>
         </div>
         <div id="hiddenBalls" class="hidden-balls" aria-label="Hidden soccer ball challenge"></div>
@@ -135,19 +214,13 @@
             <p>Press shoot and see what birthday message you score.</p>
             <button id="shootBtn" type="button">Shoot ⚽</button>
           </div>
-          <div class="goal-box">
-            <div id="ball" class="ball">⚽</div>
-            <div class="net"></div>
-          </div>
+          <div class="goal-box"><div id="ball" class="ball">⚽</div><div class="net"></div></div>
         </div>
         <p id="shotResult" class="shot-result">Ready at the line...</p>
       </section>
 
       <section class="section bracket-section">
-        <div class="section-heading">
-          <p class="eyebrow">Tournament bracket</p>
-          <h2>Layla's Best Traits Cup</h2>
-        </div>
+        <div class="section-heading"><p class="eyebrow">Tournament bracket</p><h2>Layla's Best Traits Cup</h2></div>
         <div class="bracket">
           <div>Kindness <span>beats</span> Bad Days</div>
           <div>Humor <span>beats</span> Boredom</div>
@@ -155,20 +228,6 @@
           <div>Friendship <span>beats</span> Loneliness</div>
           <div class="winner">🏆 Champion: Layla</div>
         </div>
-      </section>
-
-      <section id="guestbook" class="section guestbook-section">
-        <div class="section-heading">
-          <p class="eyebrow">Digital guestbook</p>
-          <h2>Leave Layla a Birthday Note</h2>
-          <p>This saves on the device/browser using local storage. No backend needed.</p>
-        </div>
-        <form id="guestbookForm" class="guestbook-form">
-          <input id="guestName" type="text" placeholder="Your name" maxlength="40" required />
-          <textarea id="guestMessage" placeholder="Write a birthday message..." maxlength="220" required></textarea>
-          <button type="submit">Add Message</button>
-        </form>
-        <div id="guestbookMessages" class="messages"></div>
       </section>
 
       <footer class="footer">
@@ -179,6 +238,6 @@
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
